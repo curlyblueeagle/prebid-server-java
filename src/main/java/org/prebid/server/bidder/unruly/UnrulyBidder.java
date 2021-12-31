@@ -59,7 +59,7 @@ public class UnrulyBidder implements Bidder<BidRequest> {
         }
 
         final List<HttpRequest<BidRequest>> outgoingRequests = modifiedImps.stream()
-                .map(imp -> createSingleRequest(imp, request, endpointUrl))
+                .map(imp -> createSingleRequest(imp, request))
                 .collect(Collectors.toList());
 
         return Result.of(outgoingRequests, errors);
@@ -85,8 +85,7 @@ public class UnrulyBidder implements Bidder<BidRequest> {
         return modifiedImp.build();
     }
 
-    private HttpRequest<BidRequest> createSingleRequest(Imp modifiedImp, BidRequest request,
-                                                        String endpointUrl) {
+    private HttpRequest<BidRequest> createSingleRequest(Imp modifiedImp, BidRequest request) {
         final BidRequest outgoingRequest = request.toBuilder().imp(Collections.singletonList(modifiedImp)).build();
 
         return HttpRequest.<BidRequest>builder()
@@ -132,7 +131,11 @@ public class UnrulyBidder implements Bidder<BidRequest> {
     private static BidType getBidType(String impId, List<Imp> imps) {
         for (Imp imp : imps) {
             if (imp.getId().equals(impId)) {
-                return BidType.video;
+                if (imp.getBanner() != null) {
+                    return BidType.banner;
+                } else if (imp.getVideo() != null) {
+                    return BidType.video;
+                }
             }
         }
         throw new PreBidException(String.format("Failed to find impression %s", impId));
